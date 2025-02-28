@@ -350,7 +350,7 @@ export function MedicineBottle() {
     <div className="relative w-full flex justify-center items-center min-h-[400px]">
       <div 
         ref={containerRef} 
-        className="w-[533px] h-[533px] cursor-grab active:cursor-grabbing max-w-full"
+        className="w-[533px] h-[533px] cursor-grab active:cursor-grabbing max-w-[100vw] mx-auto"
         style={{ opacity: isLoaded ? 1 : 0, transition: 'opacity 0.5s ease-in' }}
       />
       {!isLoaded && (

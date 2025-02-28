@@ -10,7 +10,7 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 
 export function MedicineStats() {
   const { name, totalPills, pillsRemaining, dailyDose, startDate, intakeHistory } = useMedicineStore();
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useMediaQuery("(max-width: 430px)");
   
   const daysRemaining = Math.floor(pillsRemaining / dailyDose);
   const percentRemaining = (pillsRemaining / totalPills) * 100;

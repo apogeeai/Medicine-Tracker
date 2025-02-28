@@ -10,17 +10,13 @@ export default function Home() {
   return (
     <main className="min-h-screen">
       {/* Animated Background */}
-      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-blue-100 to-green-100 dark:from-blue-950 dark:to-green-950">
+      <div className="fixed inset-0 -z-10 bg-background">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.3),rgba(255,255,255,0))]"></div>
       </div>
       
       <div className="container mx-auto px-4 py-8">
-        <header className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-2">
-            <Pill className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold tracking-tight">MediTrack</h1>
-          </div>
-          <ModeToggle />
+        <header className="flex justify-end items-center mb-8">
+        
         </header>
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
