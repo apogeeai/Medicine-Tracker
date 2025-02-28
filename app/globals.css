@@ -6,6 +6,13 @@
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
+  --card-gradient-1: rgba(97, 96, 131, 0.2);
+  --card-gradient-2: rgba(42, 41, 65, 0.3);
+  --card-gradient-3: rgba(24, 21, 51, 0.4);
+  --card-gradient-4: rgba(97, 96, 131, 0.15);
+  --card-border: rgba(100, 87, 135, 0.3);
+  --card-border-alpha: rgba(255, 255, 255, 0.1);
+  --card-gradient-highlight: rgba(255, 255, 255, 0.8);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -13,6 +20,13 @@
     --foreground-rgb: 255, 255, 255;
     --background-start-rgb: 0, 0, 0;
     --background-end-rgb: 0, 0, 0;
+    --card-gradient-1: rgba(97, 96, 131, 0.2);
+    --card-gradient-2: rgba(42, 41, 65, 0.3);
+    --card-gradient-3: rgba(24, 21, 51, 0.4);
+    --card-gradient-4: rgba(97, 96, 131, 0.15);
+    --card-border: #2c2c3f;
+    --card-border-alpha: rgba(255, 255, 255, 0.1);
+    --card-gradient-highlight: rgba(255, 255, 255, 0.15);
   }
 }
 
@@ -78,5 +92,82 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Grid overlay */
+.grid-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: 
+    linear-gradient(to right, rgba(128, 128, 128, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(128, 128, 128, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+}
+
+/* Card styling with backdrop blur and gradients */
+.thumb-card.main {
+  background-image: 
+    radial-gradient(circle farthest-side, var(--card-gradient-1) 20%, var(--card-gradient-2)),
+    linear-gradient(var(--card-gradient-3), var(--card-gradient-3));
+  border-color: var(--card-border);
+}
+
+.thumb-card {
+  background-image: 
+    radial-gradient(circle farthest-side, var(--card-gradient-1) 20%, var(--card-gradient-2)),
+    linear-gradient(var(--card-gradient-3), var(--card-gradient-3));
+  border-color: var(--card-border);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  border: 1px solid var(--card-border-alpha);
+  border-radius: 16px;
+}
+
+.get-started-card {
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  background-image: radial-gradient(circle at 40%, var(--card-gradient-4), var(--card-gradient-2));
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 88px;
+  position: relative;
+}
+
+/* Card base styles */
+.card {
+  background-image: 
+    radial-gradient(circle farthest-side, var(--card-gradient-1) 20%, var(--card-gradient-2)),
+    linear-gradient(var(--card-gradient-3), var(--card-gradient-3));
+  border-color: var(--card-border);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  border: 1px solid var(--card-border-alpha);
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Card bottom gradient */
+.card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(to top, var(--card-gradient-highlight), transparent);
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+/* Ensure background blur works in supported browsers */
+@supports ((-webkit-backdrop-filter: none) or (backdrop-filter: none)) {
+  .card,
+  .thumb-card,
+  .get-started-card {
+    background-color: transparent;
   }
 }

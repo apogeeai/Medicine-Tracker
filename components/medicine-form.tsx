@@ -1,237 +1,194 @@
 "use client";
 
+import * as React from 'react';
 import { useState } from 'react';
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { CalendarIcon, PlusCircle, MinusCircle } from "lucide-react";
-import { format } from "date-fns";
-
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { useMedicineStore } from '@/lib/medicine-store';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { MinusCircle, PlusCircle } from 'lucide-react';
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useMedicineStore } from "@/lib/medicine-store";
-import { useToast } from "@/hooks/use-toast";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-const formSchema = z.object({
-  name: z.string().min(1, "Medication name is required"),
-  totalPills: z.coerce.number().min(1, "Must have at least 1 pill"),
-  dailyDose: z.coerce.number().min(1, "Daily dose must be at least 1"),
-  startDate: z.date(),
-  intakeCount: z.coerce.number().min(0, "Cannot take negative pills"),
-});
+interface MedicineFormData {
+  name: string;
+  totalPills: number;
+  dailyDose: number;
+  startDate: string;
+}
 
 export function MedicineForm() {
-  const { toast } = useToast();
-  const { 
-    name, 
-    totalPills, 
-    pillsRemaining, 
-    dailyDose, 
-    startDate,
-    setName, 
-    setTotalPills, 
-    setDailyDose, 
-    setStartDate,
-    recordIntake,
-    resetMedicine
-  } = useMedicineStore();
-  
-  const [intakeCount, setIntakeCount] = useState(1);
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name,
-      totalPills,
-      dailyDose,
-      startDate: startDate ? new Date(startDate) : new Date(),
-      intakeCount: 1,
-    },
+  const { name, totalPills, dailyDose, startDate, updateSettings, recordIntake } = useMedicineStore();
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [intakeCount, setIntakeCount] = React.useState(1);
+  const [formData, setFormData] = React.useState<MedicineFormData>({
+    name,
+    totalPills,
+    dailyDose,
+    startDate
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    setName(values.name);
-    setTotalPills(values.totalPills);
-    setDailyDose(values.dailyDose);
-    setStartDate(values.startDate.toISOString().split('T')[0]);
-    
-    toast({
-      title: "Settings updated",
-      description: "Your medication settings have been updated.",
-    });
-  }
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setShowConfirmation(true);
+  };
 
-  function handleIntake() {
-    if (intakeCount > 0 && intakeCount <= pillsRemaining) {
+  const handleConfirm = () => {
+    updateSettings(formData);
+    setShowConfirmation(false);
+  };
+
+  const handleInputChange = (field: keyof MedicineFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.type === 'number' ? parseInt(e.target.value) || 0 : e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleIntake = () => {
+    if (intakeCount > 0 && intakeCount <= totalPills) {
       recordIntake(intakeCount);
-      toast({
-        title: "Intake recorded",
-        description: `You've taken ${intakeCount} pill${intakeCount > 1 ? 's' : ''}.`,
-      });
       setIntakeCount(1);
-    } else if (intakeCount > pillsRemaining) {
-      toast({
-        title: "Not enough pills",
-        description: `You only have ${pillsRemaining} pill${pillsRemaining !== 1 ? 's' : ''} left.`,
-        variant: "destructive",
-      });
     }
-  }
-
-  function handleReset() {
-    resetMedicine();
-    toast({
-      title: "Medication reset",
-      description: "Your medication has been refilled.",
-    });
-  }
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => setIntakeCount(Math.max(1, intakeCount - 1))}
-            disabled={intakeCount <= 1}
-          >
-            <MinusCircle className="h-4 w-4" />
-          </Button>
-          
-          <div className="w-16 text-center">
-            <span className="text-2xl font-bold">{intakeCount}</span>
+      <Card>
+        <CardHeader>
+          <CardTitle>Daily Intake</CardTitle>
+          <CardDescription>
+            Record your daily medication intake
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setIntakeCount(Math.max(1, intakeCount - 1))}
+                disabled={intakeCount <= 1}
+              >
+                <MinusCircle className="h-4 w-4" />
+              </Button>
+              
+              <Input
+                type="number"
+                min={1}
+                value={intakeCount}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  if (!isNaN(value) && value >= 1) {
+                    setIntakeCount(value);
+                  }
+                }}
+                className="w-20 text-center"
+              />
+              
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setIntakeCount(intakeCount + 1)}
+              >
+                <PlusCircle className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <Button onClick={handleIntake} disabled={totalPills <= 0}>
+              Record Intake
+            </Button>
           </div>
-          
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => setIntakeCount(intakeCount + 1)}
-          >
-            <PlusCircle className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        <div className="flex gap-2">
-          <Button onClick={handleIntake} disabled={pillsRemaining <= 0}>
-            Record Intake
-          </Button>
-          
-          <Button variant="outline" onClick={handleReset}>
-            Refill
-          </Button>
-        </div>
-      </div>
-      
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Medication Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter medication name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Medication Settings</CardTitle>
+          <CardDescription>
+            Configure your medication details
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Medication Name</Label>
+              <Input
+                value={formData.name}
+                onChange={handleInputChange('name')}
+                required
+              />
+            </div>
             
-            <FormField
-              control={form.control}
-              name="totalPills"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Total Pills</FormLabel>
-                  <FormControl>
-                    <Input type="number" min={1} {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Total number of pills in a full bottle
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Total Pills</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={formData.totalPills}
+                  onChange={handleInputChange('totalPills')}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Daily Dose</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={formData.dailyDose}
+                  onChange={handleInputChange('dailyDose')}
+                  required
+                />
+              </div>
+            </div>
             
-            <FormField
-              control={form.control}
-              name="dailyDose"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Daily Dose</FormLabel>
-                  <FormControl>
-                    <Input type="number" min={1} {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    How many pills you take each day
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Start Date</Label>
+                <Input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={handleInputChange('startDate')}
+                  required
+                />
+              </div>
+            </div>
             
-            <FormField
-              control={form.control}
-              name="startDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Start Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormDescription>
-                    When you started taking this medication
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          
-          <Button type="submit">Save Settings</Button>
-        </form>
-      </Form>
+            <Button type="submit" className="w-full">
+              Save Settings
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Changes</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to overwrite the current medication data? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConfirmation(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirm}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

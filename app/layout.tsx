@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
+import { Nav } from '@/components/nav';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -25,7 +26,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <div className="grid-overlay" />
+          <Nav />
+          <div className="pt-[60px]">
+            {children}
+          </div>
           <Toaster />
         </ThemeProvider>
       </body>

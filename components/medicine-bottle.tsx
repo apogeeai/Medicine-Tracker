@@ -18,37 +18,36 @@ export function MedicineBottle() {
     const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
     camera.position.z = 6;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(400, 400); // Increased size
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: true, 
+      alpha: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setSize(533, 533);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap; // Less expensive shadow mapping
     containerRef.current.appendChild(renderer.domElement);
 
-    // Controls
+    // Controls - reduce update frequency
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.rotateSpeed = 0.5;
+    controls.dampingFactor = 0.1; // Increased for less frequent updates
+    controls.rotateSpeed = 0.8;
     controls.enableZoom = false;
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    // Simplified lighting setup
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(5, 5, 5);
     directionalLight.castShadow = true;
-    directionalLight.shadow.mapSize.width = 1024;
-    directionalLight.shadow.mapSize.height = 1024;
+    directionalLight.shadow.mapSize.width = 512; // Reduced shadow map size
+    directionalLight.shadow.mapSize.height = 512;
     scene.add(directionalLight);
 
-    // Add a point light to create highlights on the bottle
-    const pointLight = new THREE.PointLight(0xffffff, 0.8);
-    pointLight.position.set(-3, 2, 3);
-    scene.add(pointLight);
-
-    // Ground plane for shadow
-    const planeGeometry = new THREE.PlaneGeometry(15, 15);
+    // Simplified ground plane
+    const planeGeometry = new THREE.PlaneGeometry(10, 10);
     const planeMaterial = new THREE.ShadowMaterial({ opacity: 0.2 });
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
     plane.rotation.x = -Math.PI / 2;
@@ -60,71 +59,46 @@ export function MedicineBottle() {
     const bottleGroup = new THREE.Group();
     scene.add(bottleGroup);
 
-    // Bottle body - more realistic shape with slight taper
-    const bottleHeight = 3.5;
-    const bottomRadius = 1.2;
-    const topRadius = 1.1;
+    // Bottle body - optimized geometry
+    const bottleHeight = 4.7;
+    const bottomRadius = 1.6;
+    const topRadius = 1.55; // Slightly tapered for realism
     const bottleGeometry = new THREE.CylinderGeometry(
-      topRadius, bottomRadius, bottleHeight, 32, 1, false
+      topRadius, bottomRadius, bottleHeight, 32, 1, false // Increased segments for smoother look
     );
     
-    // Create a more realistic bottle material with subsurface scattering effect
+    // Optimized bottle material
     const bottleMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xff8c00, // Orange
+      color: 0xe67300, // Darker orange color
       transparent: true,
-      opacity: 0.8,
-      roughness: 0.2,
+      opacity: 0.92,
+      roughness: 0.25, // Slightly smoother
       metalness: 0.1,
-      clearcoat: 1.0,
+      clearcoat: 1.0, // Increased clearcoat
       clearcoatRoughness: 0.1,
-      transmission: 0.2, // Slight transparency
-      thickness: 0.5,   // Thickness for subsurface scattering
-      envMapIntensity: 1.5
+      transmission: 0.2,
+      thickness: 0.5,
+      envMapIntensity: 1.2
     });
     
     const bottle = new THREE.Mesh(bottleGeometry, bottleMaterial);
     bottle.castShadow = true;
     bottleGroup.add(bottle);
 
-    // Bottle neck - narrower section at the top
-    const neckGeometry = new THREE.CylinderGeometry(0.8, topRadius, 0.5, 32);
-    const neck = new THREE.Mesh(neckGeometry, bottleMaterial);
-    neck.position.y = bottleHeight / 2 + 0.25;
-    neck.castShadow = true;
-    bottleGroup.add(neck);
-
-    // Bottle cap - more detailed with ridges
-    const capGroup = new THREE.Group();
-    
-    // Main cap
-    const capGeometry = new THREE.CylinderGeometry(0.9, 0.9, 0.7, 32);
+    // Simplified cap
+    const capHeight = 0.7; // Reduced height
+    const capGeometry = new THREE.CylinderGeometry(topRadius, topRadius, capHeight, 24); // Reduced segments
     const capMaterial = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
       roughness: 0.3,
-      metalness: 0.1
+      metalness: 0.1,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.2
     });
     const cap = new THREE.Mesh(capGeometry, capMaterial);
+    cap.position.y = bottleHeight / 2 + capHeight / 2;
     cap.castShadow = true;
-    capGroup.add(cap);
-    
-    // Cap ridges
-    const ridgeGeometry = new THREE.CylinderGeometry(0.92, 0.92, 0.1, 32, 1, false);
-    const ridgeMaterial = new THREE.MeshStandardMaterial({
-      color: 0xeeeeee,
-      roughness: 0.5
-    });
-    
-    // Add multiple ridges to the cap
-    for (let i = -0.25; i <= 0.25; i += 0.15) {
-      const ridge = new THREE.Mesh(ridgeGeometry, ridgeMaterial);
-      ridge.position.y = i;
-      ridge.castShadow = true;
-      capGroup.add(ridge);
-    }
-    
-    // Position the cap group
-    capGroup.position.y = bottleHeight / 2 + 0.75;
-    bottleGroup.add(capGroup);
+    bottleGroup.add(cap);
 
     // Create a curved label that wraps around the bottle
     const createLabel = () => {
@@ -135,73 +109,89 @@ export function MedicineBottle() {
         }
       });
       
-      // Create a canvas for the label
+      // Create a canvas for the label - reduced size for better performance
       const labelCanvas = document.createElement('canvas');
-      labelCanvas.width = 1024;
-      labelCanvas.height = 512;
+      labelCanvas.width = 512; // Reduced from 1024
+      labelCanvas.height = 256; // Reduced from 512
       const labelContext = labelCanvas.getContext('2d');
       
       if (labelContext) {
         // Background gradient
-        const gradient = labelContext.createLinearGradient(0, 0, 0, 512);
-        gradient.addColorStop(0, '#ffffff');
-        gradient.addColorStop(1, '#f0f0f0');
+        const gradient = labelContext.createLinearGradient(0, 0, 0, 256);
+        gradient.addColorStop(0, '#fafafa');
+        gradient.addColorStop(1, '#f5f5f5');
         
         labelContext.fillStyle = gradient;
-        labelContext.fillRect(0, 0, 1024, 512);
+        labelContext.fillRect(0, 0, 512, 256);
         
-        // Add a border
-        labelContext.strokeStyle = '#cccccc';
-        labelContext.lineWidth = 8;
-        labelContext.strokeRect(10, 10, 1004, 492);
+        // Add pharmacy-style border with double lines
+        labelContext.strokeStyle = '#dddddd';
+        labelContext.lineWidth = 2;
+        labelContext.strokeRect(8, 8, 496, 240);
+        labelContext.strokeRect(12, 12, 488, 232); // Double border
         
         // Add medication name
-        labelContext.fillStyle = '#333333';
-        labelContext.font = 'bold 60px Arial';
+        labelContext.fillStyle = '#222222';
+        labelContext.font = 'bold 32px Arial'; // Reduced from 40px
         labelContext.textAlign = 'center';
-        labelContext.fillText(name.toUpperCase(), 512, 100);
+        labelContext.fillText(name.toUpperCase(), 256, 45);
         
-        // Add a divider line
+        // Add divider lines
         labelContext.beginPath();
-        labelContext.moveTo(100, 130);
-        labelContext.lineTo(924, 130);
-        labelContext.strokeStyle = '#999999';
-        labelContext.lineWidth = 3;
+        labelContext.moveTo(40, 65);
+        labelContext.lineTo(472, 65);
+        labelContext.strokeStyle = '#cccccc';
+        labelContext.lineWidth = 1;
         labelContext.stroke();
         
         // Add pill count
-        labelContext.font = 'bold 80px Arial';
-        labelContext.fillText(`${pillsRemaining}/${totalPills}`, 512, 250);
-        labelContext.font = '40px Arial';
-        labelContext.fillText('PILLS REMAINING', 512, 310);
+        labelContext.font = 'bold 40px Arial'; // Reduced from 50px
+        labelContext.fillText(`${pillsRemaining}/${totalPills}`, 256, 110);
+        labelContext.font = '20px Arial'; // Reduced from 24px
+        labelContext.fillText('PILLS REMAINING', 256, 135);
         
         // Add warning text
         labelContext.fillStyle = '#cc0000';
-        labelContext.font = 'bold 30px Arial';
-        labelContext.fillText('KEEP OUT OF REACH OF CHILDREN', 512, 400);
+        labelContext.font = 'bold 14px Arial'; // Reduced from 18px
+        labelContext.fillText('KEEP OUT OF REACH OF CHILDREN', 256, 170);
         
-        // Add expiration date
-        const futureDate = new Date();
-        futureDate.setFullYear(futureDate.getFullYear() + 1);
-        const expiryDate = futureDate.toLocaleDateString('en-US', { 
+        // Add RX number and expiration
+        const startDate = new Date();
+        const refillDate = new Date(startDate);
+        refillDate.setDate(refillDate.getDate() + 28); // Changed from 30 to 28 days
+        
+        const expiryDate = refillDate.toLocaleDateString('en-US', { 
           month: 'short', 
           day: 'numeric', 
           year: 'numeric' 
         });
         
-        labelContext.fillStyle = '#333333';
-        labelContext.font = '30px Arial';
-        labelContext.fillText(`EXP: ${expiryDate}`, 512, 450);
+        labelContext.fillStyle = '#444444';
+        labelContext.font = '14px Arial'; // Reduced from 16px
+        labelContext.textAlign = 'left';
+        labelContext.fillText(`RX #: ${Math.random().toString().slice(2, 8)}`, 40, 200);
+        labelContext.textAlign = 'right';
+        labelContext.fillText(`REFILL AFTER: ${expiryDate}`, 472, 200);
+        
+        // Add pharmacy details
+        labelContext.font = '12px Arial'; // New smaller text
+        labelContext.textAlign = 'center';
+        labelContext.fillStyle = '#666666';
+        labelContext.fillText('PHARMACY NAME • (555) 555-5555', 256, 225);
+        labelContext.fillText('123 PHARMACY ST, CITY, ST 12345', 256, 240);
       }
       
-      // Create texture from canvas
+      // Create texture from canvas with optimized settings
       const labelTexture = new THREE.CanvasTexture(labelCanvas);
+      labelTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      labelTexture.minFilter = THREE.LinearFilter;
+      labelTexture.generateMipmaps = false;
       
-      // Create a cylinder geometry for the label (slightly larger than the bottle)
+      // Optimized label geometry
       const labelRadius = bottomRadius + 0.01;
       const labelHeight = bottleHeight * 0.7;
       const labelGeometry = new THREE.CylinderGeometry(
-        labelRadius, labelRadius, labelHeight, 64, 1, true
+        labelRadius, labelRadius, labelHeight, 32, 1, true // Reduced segments
       );
       
       // Create material with the texture
@@ -214,7 +204,7 @@ export function MedicineBottle() {
       // Create the label mesh
       const label = new THREE.Mesh(labelGeometry, labelMaterial);
       label.name = 'label';
-      label.position.y = -0.2; // Position it slightly below center
+      label.position.y = -0.2;
       
       bottleGroup.add(label);
     };
@@ -231,48 +221,64 @@ export function MedicineBottle() {
         pillsGroup.remove(pillsGroup.children[0]);
       }
 
-      // Calculate fill level based on remaining pills
+      // Show actual number of pills, but limit to 100 for performance
+      const maxVisiblePills = Math.min(pillsRemaining, 100);
       const fillLevel = pillsRemaining / totalPills;
-      const maxPills = 50; // Increased number of visible pills
-      const pillsToShow = Math.ceil(maxPills * fillLevel);
 
       // Create pills with varied shapes and colors
-      for (let i = 0; i < pillsToShow; i++) {
+      for (let i = 0; i < maxVisiblePills; i++) {
         let pillGeometry;
         
-        // Randomly choose between oval and round pills
-        const pillType = Math.random() > 0.5 ? 'round' : 'oval';
+        // Randomly choose between oval and round pills with more variation
+        const pillType = Math.random() > 0.7 ? 'round' : 'oval';
+        const pillSize = 0.15 + (Math.random() * 0.05); // Vary pill size slightly
         
         if (pillType === 'round') {
-          pillGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+          pillGeometry = new THREE.SphereGeometry(pillSize, 16, 16);
         } else {
-          // Create an oval pill using a scaled sphere
-          pillGeometry = new THREE.SphereGeometry(0.15, 16, 16);
-          pillGeometry.scale(1, 0.5, 1);
+          // Create an oval pill using a scaled sphere with random elongation
+          pillGeometry = new THREE.SphereGeometry(pillSize, 16, 16);
+          const elongation = 0.4 + (Math.random() * 0.2); // Random elongation
+          pillGeometry.scale(1, elongation, 1);
         }
         
-        // Slightly vary the pill colors
-        const hue = Math.random() * 0.1 + 0.9; // Slight variation around white
+        // Vary the pill colors more
+        const hue = 0.85 + (Math.random() * 0.3); // More color variation
+        const saturation = 0.95 + (Math.random() * 0.1);
         const pillMaterial = new THREE.MeshStandardMaterial({
-          color: new THREE.Color(hue, hue, hue),
-          roughness: 0.5
+          color: new THREE.Color(hue, saturation, hue),
+          roughness: 0.4 + (Math.random() * 0.2),
+          metalness: 0.1
         });
         
         const pill = new THREE.Mesh(pillGeometry, pillMaterial);
         
-        // Random position within the bottle
-        const radius = 0.8 * bottomRadius;
+        // Position pills more randomly within the bottle
+        const layer = Math.floor(i / 12); // Fewer pills per layer for more randomness
+        const layerHeight = fillLevel * bottleHeight;
+        const maxRadius = 0.85 * bottomRadius * (1 - layer * 0.1);
+        
+        // Random position within the layer's radius
+        const radius = maxRadius * Math.sqrt(Math.random()); // Use sqrt for more uniform distribution
         const theta = Math.random() * Math.PI * 2;
-        const y = Math.random() * fillLevel * bottleHeight - bottleHeight/2;
+        const heightVariation = Math.random() * 0.2; // Add random height variation
         
-        pill.position.x = radius * Math.cos(theta);
-        pill.position.z = radius * Math.sin(theta);
-        pill.position.y = y;
+        const x = radius * Math.cos(theta);
+        const z = radius * Math.sin(theta);
+        const y = (layer * 0.25) - (bottleHeight/2) + 0.3 + heightVariation;
         
-        // Random rotation
-        pill.rotation.x = Math.random() * Math.PI;
-        pill.rotation.y = Math.random() * Math.PI;
-        pill.rotation.z = Math.random() * Math.PI;
+        pill.position.set(
+          x + (Math.random() * 0.1 - 0.05), // Add small random offset
+          Math.min(y, layerHeight - bottleHeight/2),
+          z + (Math.random() * 0.1 - 0.05)
+        );
+        
+        // Random rotation on all axes
+        pill.rotation.set(
+          Math.random() * Math.PI * 2,
+          Math.random() * Math.PI * 2,
+          Math.random() * Math.PI * 2
+        );
         
         pillsGroup.add(pill);
       }
@@ -283,8 +289,12 @@ export function MedicineBottle() {
 
     // Animation loop
     let autoRotate = true;
-    const animate = () => {
+    let lastTime = 0;
+    const animate = (time) => {
       requestAnimationFrame(animate);
+      
+      // Limit updates to ~60fps
+      if (time - lastTime < 16) return;
       
       if (autoRotate) {
         bottleGroup.rotation.y += 0.005;
@@ -292,6 +302,8 @@ export function MedicineBottle() {
       
       controls.update();
       renderer.render(scene, camera);
+      
+      lastTime = time;
     };
     
     animate();
@@ -335,10 +347,10 @@ export function MedicineBottle() {
   }, [pillsRemaining, totalPills, name]);
 
   return (
-    <div className="relative">
+    <div className="relative w-full flex justify-center items-center min-h-[400px]">
       <div 
         ref={containerRef} 
-        className="w-[400px] h-[400px] mx-auto cursor-grab active:cursor-grabbing"
+        className="w-[533px] h-[533px] cursor-grab active:cursor-grabbing max-w-full"
         style={{ opacity: isLoaded ? 1 : 0, transition: 'opacity 0.5s ease-in' }}
       />
       {!isLoaded && (

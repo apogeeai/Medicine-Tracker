@@ -15,6 +15,13 @@ interface MedicineState {
   setStartDate: (date: string) => void;
   recordIntake: (count: number) => void;
   resetMedicine: () => void;
+  updateSettings: (settings: {
+    name: string;
+    totalPills: number;
+    pillsRemaining: number;
+    dailyDose: number;
+    startDate: string;
+  }) => void;
 }
 
 export const useMedicineStore = create<MedicineState>()(
@@ -59,6 +66,10 @@ export const useMedicineStore = create<MedicineState>()(
       resetMedicine: () => set({
         pillsRemaining: get().totalPills,
         intakeHistory: []
+      }),
+      updateSettings: (settings) => set({
+        ...settings,
+        pillsRemaining: settings.totalPills
       })
     }),
     {
